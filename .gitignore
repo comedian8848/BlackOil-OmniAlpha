@@ -1,0 +1,127 @@
+# ============================================
+# Mac OS
+# ============================================
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ============================================
+# Python
+# ============================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ============================================
+# Virtual Environment
+# ============================================
+venv/
+.venv/
+env/
+ENV/
+.conda/
+
+# ============================================
+# IDE / Editor
+# ============================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+
+# ============================================
+# Streamlit
+# ============================================
+.streamlit/secrets.toml
+.streamlit/config.toml
+
+# ============================================
+# OmniAlpha Specific - Data & Logs
+# ============================================
+data/
+cache/
+temp/
+logs/
+*.log
+output/
+results/
+
+# ============================================
+# OmniAlpha Specific - Large Data Files
+# ============================================
+*.csv
+*.xlsx
+*.xls
+*.parquet
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.feather
+
+# ============================================
+# Secrets & Credentials (CRITICAL)
+# ============================================
+secrets.yaml
+secrets.json
+config_private.yaml
+config_private.json
+.env
+.env.local
+.env.*.local
+api_keys.txt
+credentials.json
+
+# ============================================
+# Testing & Coverage
+# ============================================
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.tox/
+.nox/
+.hypothesis/
+nosetests.xml
+coverage.xml
+*.cover
+
+# ============================================
+# Jupyter Notebook
+# ============================================
+.ipynb_checkpoints/
+*.ipynb
+
+# ============================================
+# Database
+# ============================================
+*.db
+*.sqlite
+*.sqlite3
+
+# ============================================
+# Backtest Results (optional, uncomment if needed)
+# ============================================
+# backtest_results/
+# portfolio_snapshots/
