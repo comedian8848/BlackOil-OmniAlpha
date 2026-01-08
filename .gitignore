@@ -147,3 +147,27 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Test Reports (个人查看，不上传)
+test_reports/
+htmlcov/
+.coverage
+coverage.xml
+*.cover
+junit.xml
+
+# Test Summary Documents (个人参考，不上传)
+TEST_SUMMARY.md
+TESTING.md
+
+# Backup Files
+*.bak
+pytest.ini.bak
+
+# Log Files
+*.log
+quick_demo_final.log
+quick_demo_output.log
+rigorous_test_final.log
+rigorous_test_output.log
+training_output.log

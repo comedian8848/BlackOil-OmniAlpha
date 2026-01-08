@@ -1,0 +1,42 @@
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+# 标记定义
+markers = [
+    "unit: 单元测试",
+    "integration: 集成测试",
+    "performance: 性能测试",
+    "data_quality: 数据质量测试",
+    "regression: 回归测试",
+    "slow: 慢速测试",
+    "web_ui: Web UI测试",
+    "cli: CLI测试",
+]
+
+# 输出选项
+addopts = [
+    "-v",
+    "--tb=short",
+    "--cov=.",
+    "--cov-report=term-missing",
+    "--cov-report=html:htmlcov",
+    "--cov-report=xml",
+    "--cov-config=.coveragerc",
+    "-ra",
+]
+
+# 警告过滤
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
+# 日志配置
+log_cli = true
+log_cli_level = "INFO"
+log_cli_format = "%(asctime)s [%(levelname)8s] %(message)s"
+log_cli_date_format = "%Y-%m-%d %H:%M:%S"
