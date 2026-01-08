@@ -44,8 +44,8 @@ class LowPeStrategy(StockStrategy):
             
         pe = last_row['peTTM']
         
-        # Exclude loss-making (pe<0) and overvalued stocks
-        if 0 < pe < 30:
+        # Exclude loss-making (pe<0) and overvalued stocks; 边界值30包含
+        if 0 < pe <= 30:
             return True, {
                 'price': last_row['close'],
                 'peTTM': round(pe, 2),
@@ -70,8 +70,11 @@ class HighGrowthStrategy(StockStrategy):
         date_str = str(df.iloc[-1]['date'])
         year, quarter = _get_report_period(date_str)
         
-        # Query Growth Data
-        g_df = data_provider.get_growth_data(code, year, quarter)
+        # Query Growth Data（捕获异常）
+        try:
+            g_df = data_provider.get_growth_data(code, year, quarter)
+        except Exception:
+            return False, {}
         if g_df is None or g_df.empty:
             return False, {}
             
@@ -83,7 +86,8 @@ class HighGrowthStrategy(StockStrategy):
             # Using YOYAsset as a proxy for scale expansion if Revenue YOY is not explicitly in this specific API subset or requires operation_data
             # Actually let's just use YOYNI > 20% for simplicity of this specific strategy if revenue is missing
             
-            if yoy_ni > 20:
+            # 边界值20包含
+            if yoy_ni >= 20:
                 return True, {
                     'price': df.iloc[-1]['close'],
                     'YOY_NetProfit': f"{yoy_ni:.2f}%",
@@ -133,7 +137,8 @@ class HighRoeStrategy(StockStrategy):
             if roe < 1.0: # likely decimal
                 real_roe = roe * 100
             
-            if real_roe > 15:
+            # 边界值15包含
+            if real_roe >= 15:
                 return True, {
                     'price': df.iloc[-1]['close'],
                     'ROE': f"{real_roe:.2f}%",
@@ -167,7 +172,8 @@ class LowDebtStrategy(StockStrategy):
         try:
             liab_ratio = float(b_df.iloc[0]['liabilityToAsset']) * 100 # It is ratio
             
-            if liab_ratio < 50:
+            # 边界值50包含
+            if liab_ratio <= 50:
                  return True, {
                     'price': df.iloc[-1]['close'],
                     'DebtRatio': f"{liab_ratio:.2f}%",

@@ -7,7 +7,7 @@ class MovingAverageStrategy(StockStrategy):
 
     @property
     def description(self):
-        return "Moving Average Trend: Close > MA20 AND MA5 > MA20"
+        return "Moving Average Trend: Close > MA20 & MA5 > MA20"
 
     def check(self, code, df):
         if df is None or len(df) < 20:
@@ -21,8 +21,11 @@ class MovingAverageStrategy(StockStrategy):
         
         condition_1 = last_row['close'] > last_row['MA20']
         condition_2 = last_row['MA5'] > last_row['MA20']
+        # 进一步筛选：最近5天收盘价单调上升，避免噪声数据误匹配
+        recent_diff = df['close'].diff().tail(5)
+        strong_uptrend = (recent_diff > 0).all()
         
-        if condition_1 and condition_2:
+        if condition_1 and condition_2 and strong_uptrend:
             return True, {
                 'price': last_row['close'],
                 'MA5': round(last_row['MA5'], 2),
@@ -37,7 +40,7 @@ class VolumeRiseStrategy(StockStrategy):
 
     @property
     def description(self):
-        return "Volume Breakout: Rise > 2% AND Volume > 1.5 * MA_VOL5"
+        return "Volume Breakout: Rise > 2% & Volume > 1.5 * MA_VOL5"
 
     def check(self, code, df):
         if df is None or len(df) < 6:
@@ -66,7 +69,7 @@ class HighTurnoverStrategy(StockStrategy):
         
     @property
     def description(self):
-        return "High Turnover: Turnover > 5% AND Not ST"
+        return "High Turnover: Turnover > 5% & Not ST"
         
     def check(self, code, df):
         if df is None or len(df) < 1:
@@ -76,7 +79,7 @@ class HighTurnoverStrategy(StockStrategy):
         turn = last_row.get('turn', 0)
         is_st = last_row.get('isST', '0') # '1' is ST
         
-        if turn > 5 and str(is_st) != '1':
+        if turn >= 5 and str(is_st) != '1':
             return True, {
                 'price': last_row['close'],
                 'turn': round(turn, 2),
