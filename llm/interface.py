@@ -46,9 +46,14 @@ class LLMAgent:
         """
         Streams response from the configured LLM provider.
         """
-        
+
+        if self.provider == "anthropic":
+            async for chunk in self._chat_stream_anthropic(messages, context_data):
+                yield chunk
+            return
+
         system_prompt = self._build_system_prompt(context_data)
-        
+
         # Prepend system prompt to messages
         full_messages = [{"role": "system", "content": system_prompt}] + messages
 
@@ -57,12 +62,6 @@ class LLMAgent:
             "Authorization": f"Bearer {self.api_key}"
         }
 
-        # Handle Anthropic specific headers if needed, but for now assuming OpenAI compatible or proxy
-        # If the user is using the specific Minimax/Anthropic proxy, it usually mimics OpenAI API format 
-        # OR native Anthropic. Given the key format sk-..., it looks like OpenAI compatible or proprietary.
-        # But the URL says /anthropic. This is tricky. 
-        # SAFEST BET: Use standard OpenAI-compatible chat/completions endpoint structure first.
-        
         payload = {
             "model": self.model_name,
             "messages": full_messages,
@@ -71,11 +70,11 @@ class LLMAgent:
         }
 
         endpoint = f"{self.base_url}/chat/completions"
-        
+
         # Adjust for Ollama/Local
         if self.provider == "local":
-             # Ollama is OpenAI compatible at /v1/chat/completions
-             pass
+            # Ollama is OpenAI compatible at /v1/chat/completions
+            pass
 
         try:
             async with httpx.AsyncClient(timeout=60.0) as client:
@@ -95,13 +94,13 @@ class LLMAgent:
                                 chunk = json.loads(data)
                                 # Check for error in chunk
                                 if "error" in chunk:
-                                    error_msg = chunk['error']
+                                    error_msg = chunk["error"]
                                     if isinstance(error_msg, dict):
-                                         error_msg = error_msg.get("message", str(error_msg))
+                                        error_msg = error_msg.get("message", str(error_msg))
                                     yield f"Error: {error_msg}"
                                     has_yielded = True
                                     continue
-                                
+
                                 delta = chunk.get("choices", [{}])[0].get("delta", {})
                                 content = delta.get("content", "")
                                 if content:
@@ -109,11 +108,105 @@ class LLMAgent:
                                     has_yielded = True
                             except json.JSONDecodeError:
                                 continue
-                    
+
                     if not has_yielded:
                         yield "Error: No response from AI provider. Check your settings (API Key, Base URL, Model) and ensure the service is running."
         except Exception as e:
             yield f"Connection Error: {str(e)}"
+
+    async def _chat_stream_anthropic(self, messages: list, context_data: str = "") -> AsyncGenerator[str, None]:
+        """Streams response using Anthropic Messages API with OpenAI-compatible fallback."""
+
+        system_prompt = self._build_system_prompt(context_data)
+
+        anthropic_messages = []
+        for msg in messages:
+            role = msg.get("role")
+            if role == "system":
+                content = msg.get("content", "")
+                if content:
+                    system_prompt += f"\n\n{content}"
+                continue
+            if role in ["user", "assistant"]:
+                anthropic_messages.append({"role": role, "content": msg.get("content", "")})
+
+        headers = {
+            "Content-Type": "application/json",
+            "x-api-key": self.api_key,
+            "anthropic-version": "2023-06-01",
+        }
+
+        payload = {
+            "model": self.model_name,
+            "messages": anthropic_messages,
+            "system": system_prompt,
+            "temperature": self.temperature,
+            "stream": True,
+            "max_tokens": 1024,
+        }
+
+        base_url = (self.base_url or "https://api.anthropic.com/v1").rstrip("/")
+        if base_url.endswith("/v1"):
+            anthropic_endpoint = f"{base_url}/messages"
+        else:
+            anthropic_endpoint = f"{base_url}/v1/messages"
+
+        fallback_endpoint = f"{base_url}/chat/completions"
+        endpoints = [anthropic_endpoint, fallback_endpoint]
+
+        for idx, endpoint in enumerate(endpoints):
+            try:
+                async with httpx.AsyncClient(timeout=60.0) as client:
+                    async with client.stream("POST", endpoint, headers=headers, json=payload) as response:
+                        if response.status_code == 404 and idx < len(endpoints) - 1:
+                            continue
+                        if response.status_code != 200:
+                            error_text = await response.aread()
+                            yield f"Error: {response.status_code} - {error_text.decode()}"
+                            return
+
+                        has_yielded = False
+                        async for line in response.aiter_lines():
+                            if not line:
+                                continue
+                            if line.startswith("data: "):
+                                data = line[6:]
+                                if data in ("[DONE]", ""):
+                                    continue
+                                try:
+                                    chunk = json.loads(data)
+                                    if "error" in chunk:
+                                        error_msg = chunk["error"]
+                                        if isinstance(error_msg, dict):
+                                            error_msg = error_msg.get("message", str(error_msg))
+                                        yield f"Error: {error_msg}"
+                                        has_yielded = True
+                                        continue
+
+                                    text = None
+                                    if "delta" in chunk and isinstance(chunk.get("delta"), dict):
+                                        text = chunk["delta"].get("text")
+                                    if not text and "content_block" in chunk:
+                                        content_block = chunk.get("content_block") or {}
+                                        text = content_block.get("text")
+                                    if not text and "content" in chunk and isinstance(chunk.get("content"), list):
+                                        for item in chunk["content"]:
+                                            if item.get("type") == "text":
+                                                text = item.get("text")
+                                                break
+
+                                    if text:
+                                        yield text
+                                        has_yielded = True
+                                except json.JSONDecodeError:
+                                    continue
+
+                        if not has_yielded:
+                            yield "Error: No response from AI provider. Check your settings (API Key, Base URL, Model) and ensure the service is running."
+                        return
+            except Exception as e:
+                if idx == len(endpoints) - 1:
+                    yield f"Connection Error: {str(e)}"
 
     def _build_system_prompt(self, context_data: str) -> str:
         base_prompt = """You are an expert Quantitative Finance AI Assistant for the OmniAlpha platform. 
