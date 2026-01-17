@@ -1,9 +1,9 @@
 {
   "ai": {
-    "provider": "local",
-    "api_key": "",
-    "base_url": "",
-    "model_name": "llama3-8b",
+    "provider": "anthropic",
+    "api_key": "sk-cp-iun46jmPqBABIchYLUfVgFWcq9KCchCIFnU5fk2iqMyABNLMjk9Y-2PGE47krVjZlg1n8m-RYah37ZKEZ4LgxFvM62-OvLQZV8Yps3I3fteAP6M-hoI08Q0",
+    "base_url": "https://api.minimaxi.com/anthropic",
+    "model_name": "MiniMax-M2.1",
     "temperature": 0.7,
     "permission_level": "consultant"
   },
