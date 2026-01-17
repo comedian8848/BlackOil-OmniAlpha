@@ -5,7 +5,7 @@ import { useTranslation } from '../contexts/LanguageContext';
 
 // Define Types matching Backend
 interface AISettings {
-  provider: 'openai' | 'anthropic' | 'local' | 'custom';
+  provider: 'openai' | 'anthropic' | 'local' | 'custom' | 'gemini' | 'deepseek';
   api_key: string;
   base_url: string;
   model_name: string;
@@ -220,6 +220,8 @@ const Settings: React.FC = () => {
                     <option value="local">Local (Ollama/LlamaCpp)</option>
                     <option value="openai">OpenAI</option>
                     <option value="anthropic">Anthropic</option>
+                    <option value="gemini">Gemini (Google)</option>
+                    <option value="deepseek">DeepSeek</option>
                     <option value="custom">Custom / Proxy</option>
                   </select>
                 </div>

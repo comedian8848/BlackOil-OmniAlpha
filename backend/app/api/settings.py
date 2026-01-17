@@ -15,7 +15,7 @@ SETTINGS_FILE = DATA_DIR / "settings.json"
 
 # --- Models ---
 class AISettings(BaseModel):
-    provider: Literal["openai", "anthropic", "local", "custom"] = "local"
+    provider: Literal["openai", "anthropic", "local", "custom", "gemini", "deepseek", "groq", "mistral"] = "local"
     api_key: Optional[str] = ""
     base_url: Optional[str] = ""
     model_name: str = "llama3-8b"

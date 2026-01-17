@@ -23,6 +23,19 @@ class LLMAgent:
         elif self.provider == "anthropic":
              if not self.base_url:
                 self.base_url = "https://api.anthropic.com/v1"
+        elif self.provider == "gemini":
+            if not self.base_url:
+                # Use Google's OpenAI-compatible endpoint
+                self.base_url = "https://generativelanguage.googleapis.com/v1beta/openai"
+        elif self.provider == "deepseek":
+            if not self.base_url:
+                self.base_url = "https://api.deepseek.com"
+        elif self.provider == "siliconflow":
+            if not self.base_url:
+                self.base_url = "https://api.siliconflow.cn/v1"
+        elif self.provider == "groq":
+            if not self.base_url:
+                self.base_url = "https://api.groq.com/openai/v1"
         elif self.provider == "custom":
             # For custom, user MUST provide base_url. 
             # If it's a proxy like minimax, they might mimic OpenAI or Anthropic format.
@@ -72,6 +85,7 @@ class LLMAgent:
                         yield f"Error: {response.status_code} - {error_text.decode()}"
                         return
 
+                    has_yielded = False
                     async for line in response.aiter_lines():
                         if line.startswith("data: "):
                             data = line[6:]
@@ -79,11 +93,25 @@ class LLMAgent:
                                 break
                             try:
                                 chunk = json.loads(data)
-                                content = chunk["choices"][0]["delta"].get("content", "")
+                                # Check for error in chunk
+                                if "error" in chunk:
+                                    error_msg = chunk['error']
+                                    if isinstance(error_msg, dict):
+                                         error_msg = error_msg.get("message", str(error_msg))
+                                    yield f"Error: {error_msg}"
+                                    has_yielded = True
+                                    continue
+                                
+                                delta = chunk.get("choices", [{}])[0].get("delta", {})
+                                content = delta.get("content", "")
                                 if content:
                                     yield content
+                                    has_yielded = True
                             except json.JSONDecodeError:
                                 continue
+                    
+                    if not has_yielded:
+                        yield "Error: No response from AI provider. Check your settings (API Key, Base URL, Model) and ensure the service is running."
         except Exception as e:
             yield f"Connection Error: {str(e)}"
 

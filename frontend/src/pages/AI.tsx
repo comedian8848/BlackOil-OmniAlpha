@@ -58,7 +58,7 @@ const AI: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:8000/api/ai/chat', {
+      const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -131,6 +131,52 @@ const AI: React.FC = () => {
     }
   };
 
+  const renderMessageContent = (content: string) => {
+    // Check for JSON block
+    const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/);
+    
+    if (jsonMatch) {
+      try {
+        const data = JSON.parse(jsonMatch[1]);
+        const { recommendations, analysis } = data;
+        
+        return (
+          <div className="space-y-4">
+             {/* Analysis Text */}
+            <div className="whitespace-pre-wrap">{analysis || content.replace(jsonMatch[0], '')}</div>
+            
+            {/* Stock Cards */}
+            {recommendations && recommendations.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                {recommendations.map((stock: any, idx: number) => (
+                  <div key={idx} className="bg-white border border-gray-200 p-3 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <span className="font-bold text-gray-800">{stock.code}</span>
+                        {stock.name && <span className="ml-2 text-sm text-gray-500">{stock.name}</span>}
+                      </div>
+                      <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
+                        {stock.strategy}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 line-clamp-2" title={stock.reason}>
+                      {stock.reason}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      } catch (e) {
+        // Fallback if JSON parse fails
+        return <div className="whitespace-pre-wrap">{content}</div>;
+      }
+    }
+    
+    return <div className="whitespace-pre-wrap">{content}</div>;
+  };
+
   return (
     <div className="flex flex-col h-[calc(100vh-100px)] bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
       {/* Header */}
@@ -150,15 +196,15 @@ const AI: React.FC = () => {
               {msg.role === 'user' ? <User className="w-5 h-5 text-blue-600" /> : <Bot className="w-5 h-5 text-purple-600" />}
             </div>
             
-            <div className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+            <div className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} w-full`}>
               <div 
-                className={`p-3 rounded-lg text-sm whitespace-pre-wrap ${ 
+                className={`p-3 rounded-lg text-sm w-full ${ 
                   msg.role === 'user' 
                     ? 'bg-blue-600 text-white rounded-tr-none' 
                     : 'bg-gray-100 text-gray-800 rounded-tl-none'
                 }`}
               >
-                {msg.content}
+                {renderMessageContent(msg.content)}
               </div>
               <span className="text-xs text-gray-400 mt-1">{msg.timestamp}</span>
             </div>
